@@ -1,6 +1,6 @@
 class MapReduce:
 
-    def map(self, input_filename, output_filename):
+    def _map(self, input_filename, output_filename):
         # Открыть файл
         with open(input_filename, 'r') as fin:
             mapped = []
@@ -13,7 +13,7 @@ class MapReduce:
             for entry in mapped:
                 fout.write("{},{}\n".format(entry[0], entry[1]))
 
-    def reduce(self, input_filename, output_filename):
+    def _reduce(self, input_filename, output_filename):
         reduced = {}
         # Открыть файл
         with open(input_filename, 'r') as fin:
@@ -31,3 +31,9 @@ class MapReduce:
         with open(output_filename, 'w') as fout:
             for (line, count) in reduced:
                 fout.write("{},{}\n".format(line, str(count)))
+
+    def execute(self, input_filename, output_filename):
+        # Запустить маппер
+        self._map(input_filename, "map_out.txt")
+        # Запустить редусер
+        self._reduce("map_out.txt", output_filename)
