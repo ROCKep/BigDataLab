@@ -1,9 +1,10 @@
 import random
+from multiprocessing.pool import Pool
 
 
 class RandomFileGenerator:
 
-    def __init__(self, str_len_min, str_len_max, characters, lines_count):
+    def __init__(self, str_len_min, str_len_max, characters, lines_count, lines_max_in_file, chunk_size, num_processes):
         self.str_len_min = str_len_min
         self.str_len_max = str_len_max
         self.characters = characters
