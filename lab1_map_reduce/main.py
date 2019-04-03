@@ -5,7 +5,8 @@ from RandomFileGenerator import RandomFileGenerator
 
 if __name__ == "__main__":
     # Сгенерировать файл
-    generator = RandomFileGenerator(str_len_min=5, str_len_max=10, characters=string.ascii_lowercase, lines_count=100)
+    generator = RandomFileGenerator(str_len_min=5, str_len_max=10, characters=string.ascii_lowercase + string.digits,
+                                    lines_count=100, lines_max_in_file=25, chunk_size=5, num_processes=4)
     generator.generate_file(filename="in.txt")
     print("File generated")
 
