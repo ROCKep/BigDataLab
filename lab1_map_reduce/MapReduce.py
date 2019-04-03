@@ -1,44 +1,49 @@
 import os
-import string
 from multiprocessing.pool import Pool
 
 
 class MapReduce:
+    map_in_folder = "map_in"
+    map_out_folder = "map_out"
+    reduce_out_folder = "reduce_out"
+
+    def __init__(self, lines_max_in_file, characters, num_processes, files_count):
+        self.lines_max_in_file = lines_max_in_file
+        self.characters = characters
+        self.num_processes = num_processes
+        self.files_count = files_count
 
     def execute(self, input_filename, output_filename):
         # Разделить файл для мапперов
-        self._split_file(input_filename, "map_in", 5)
+        self._split_file(input_filename, self.map_in_folder, self.files_count)
 
         # Запустить мапперы
-        map_in = ["map_in/{}".format(filename) for filename in os.listdir("map_in")]
-        map_out = ["map_out/{}".format(os.path.split(filename)[1]) for filename in map_in]
+        map_in = [os.path.join(self.map_in_folder, filename) for filename in os.listdir(self.map_in_folder)]
+        map_out = [os.path.join(self.map_out_folder, os.path.split(filename)[1]) for filename in map_in]
         map_args = zip(map_in, map_out)
-        pool = Pool(processes=4)
+        pool = Pool(processes=self.num_processes)
         pool.starmap(self._map, map_args)
 
         # Запустить редусеры
-        characters = string.ascii_letters + string.digits
-        reduce_in = ["map_out"] * len(characters)
-        reduce_out = ["reduce_out/{:02d}.txt".format(i) for i in range(len(characters))]
-        reduce_args = zip(reduce_in, reduce_out, characters)
+        reduce_in = [self.map_out_folder] * len(self.characters)
+        reduce_out = ["{}/{:02d}.txt".format(self.reduce_out_folder, i) for i in range(len(self.characters))]
+        reduce_args = zip(reduce_in, reduce_out, self.characters)
         pool.starmap(self._reduce, reduce_args)
 
         # Объединить файлы редусеров
-        self._combine_files("reduce_out", output_filename)
+        self._combine_files(self.reduce_out_folder, output_filename)
 
     def _split_file(self, input_filename, output_folder, files_count):
-        lines_max = 20
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
         with open(input_filename, 'r') as fin:
             for i in range(files_count):
                 lines = []
-                for j in range(lines_max):
+                for j in range(self.lines_max_in_file):
                     lines += fin.readline()
                 with open(os.path.join(output_folder, "{}.txt".format(i)), 'w') as fout:
-                    for line in lines:
-                        fout.write(line)
+                    fout.write(''.join([line for line in lines]))
 
     def _map(self, input_filename, output_filename):
         # Открыть файл
@@ -53,8 +58,7 @@ class MapReduce:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         with open(output_filename, 'w') as fout:
-            for entry in mapped:
-                fout.write("{},{}\n".format(entry[0], entry[1]))
+            fout.write(''.join(["{},{}\n".format(entry[0], entry[1]) for entry in mapped]))
 
     def _reduce(self, input_folder, output_filename, character):
         reduced = {}
@@ -79,13 +83,11 @@ class MapReduce:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         with open(output_filename, 'w') as fout:
-            for (line, count) in reduced:
-                fout.write("{},{}\n".format(line, str(count)))
+            fout.write(''.join(["{},{}\n".format(line, count) for line, count in reduced]))
 
     def _combine_files(self, input_folder, output_filename):
         input_filenames = os.listdir(input_folder)
         with open(output_filename, 'w') as fout:
             for input_filename in input_filenames:
                 with open(os.path.join(input_folder, input_filename), 'r') as fin:
-                    for line in fin:
-                        fout.write(line)
+                    fout.write(''.join([line for line in fin]))
